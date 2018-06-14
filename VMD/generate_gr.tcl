@@ -10,7 +10,7 @@
 
 package provide gofr_all 1.0
 
-#namespace delete ::gofrall
+namespace delete ::gofrall
 
 namespace eval ::gofrall {
 
@@ -44,7 +44,8 @@ proc ::gofrall::calc { step outf typelist } {
         }
         for {set n 0} {$n < [llength [ lindex $gofr_all 1 ] ]} {incr n} {
                 for {set i 0} {$i < [expr {[llength $typelist] * ([llength $typelist] ) } ]} {incr i} {
-                         puts -nonewline $fileId "[lindex $gofr_int_all $i $n ] "
+#                         puts -nonewline $fileId "[lindex $gofr_int_all $i $n ] [lindex $gofr_all $i $n ] "
+                         puts -nonewline $fileId "[lindex $gofr_all [ expr {$i + 1} ] $n ] [lindex $gofr_int_all $i $n ] "
                 }
                 puts $fileId ""
         }
@@ -75,7 +76,7 @@ proc ::gofrall::calc2 { step outf typelist } {
         }
         for {set n 0} {$n < [llength [ lindex $gofr_all 1 ] ]} {incr n} {
                 for {set i 0} {$i < [expr {[llength $typelist] * ([llength $typelist] -1) / 2 } ]} {incr i} {
-                         puts -nonewline $fileId "[lindex $gofr_int_all $i $n ] "
+                         puts -nonewline $fileId "[lindex $gofr_int_all $i $n ] [lindex $gofr_all $i $n ] "
                 }
                 puts $fileId ""
         }

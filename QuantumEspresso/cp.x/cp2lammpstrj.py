@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import sys
 import numpy as np
 
 BOHR = 0.529177249    # Bohr constant in Angstrom
@@ -159,6 +160,18 @@ def write_xyz(outfile, data, natoms_per_type, type_names=None):
     out_file.close()
     return
 
+if len(sys.argv)<4:
+    print "Uso: {} [prefix_file_in] [file_out] [natoms1] [natoms2] ...".format(sys.argv[0])
+    exit(-1)
+
+natoms=[]
+for n in range(3,len(sys.argv)):
+    natoms.append(int(sys.argv[n]))
+natoms=np.array(natoms)
+tot_natoms=np.sum(natoms)
+
+data=read_file_pos_vel(sys.argv[1],tot_natoms)
+write_xyz(sys.argv[2],data,natoms)
 
 #example
 #leggi = read_file_pos_vel("tmp/iceX", 162)
