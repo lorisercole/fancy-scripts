@@ -10,7 +10,7 @@
 
 package provide gofr_all 1.0
 
-namespace delete ::gofrall
+#namespace delete ::gofrall
 
 namespace eval ::gofrall {
 
