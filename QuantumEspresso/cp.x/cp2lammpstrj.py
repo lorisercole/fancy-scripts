@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # coding=utf-8
 
 import numpy as np
@@ -69,17 +69,17 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
           nstep = file_length(prefix + '.evp') - 1
        else:
           nstep = file_length(prefix + '.evp')
-       print "nstep = ", nstep
+       print("nstep = ", nstep)
 
     data = {}
     if cell is None:
         readcell = True
         data['cell'] = np.zeros((nstep,3,3), dtype=np.float64)
-        print "CELL: Reading {}.cel".format(prefix)
+        print("CELL: Reading {}.cel".format(prefix))
     else:
         readcell = False
         data['cell'] = np.array([np.identity(3)]*nstep, dtype=np.float64) * cell
-        print "CELL: Using cubic cell size: {:f}".format(cell)
+        print("CELL: Using cubic cell size: {:f}".format(cell))
 
     if (method == 'minimal'):
       data['step']  = np.arange(nstep, dtype=np.int64)
@@ -102,7 +102,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
           #print linepos
           #print values, data['step'][istep]
           if len(values):
-              for iatom in xrange(natoms):
+              for iatom in range(natoms):
                   linepos = filepos.readline()
                   values = np.array(linepos.split(), dtype=np.float64)
                   if (values.size == 3):
@@ -114,7 +114,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
           values = np.array(linevel.split())
           #print values,data[0][istep]
           if len(values):
-              for iatom in xrange(natoms):
+              for iatom in range(natoms):
                   linevel = filevel.readline()
                   values = np.array(linevel.split(), dtype=np.float64)
                   if values.size == 3:
@@ -127,7 +127,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
               values = np.array(linecel.split())
               #print values, data['step'][istep]
               if len(values):
-                  for i in xrange(3):
+                  for i in range(3):
                       values = np.array(filecel.readline().split(), dtype=np.float64)
                       data['cell'][istep,:,i] = values * BOHR # MATRIX MUST BE TRANSPOSED (stupid CP convention)
 
@@ -148,7 +148,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
       data['pos']  = np.zeros((nstep,natoms,3), dtype=np.float64)
       data['vel']  = np.zeros((nstep,natoms,3), dtype=np.float64)
       data['for']  = np.zeros((nstep,natoms,3), dtype=np.float64)
-      print 'WARNING: forces units not converted.'
+      print('WARNING: forces units not converted.')
 
       filethe = open(prefix + '.evp')
       # check if first line is text - in that case skip it
@@ -199,7 +199,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
           if len(values):
               if (data['step'][istep] != int(values[0]) ):
                   raise RuntimeError("Different timesteps between files of positions and thermo")
-              for iatom in xrange(natoms):
+              for iatom in range(natoms):
                   linepos = filepos.readline()
                   values = np.array(linepos.split(), dtype=np.float64)
                   data['pos'][istep,iatom,:] = values[:] * BOHR
@@ -210,7 +210,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
           if len(values):
               if (data['step'][istep] != int(values[0]) ):
                   raise RuntimeError("Different timesteps between files of velocity and thermo")
-              for iatom in xrange(natoms):
+              for iatom in range(natoms):
                   linevel = filevel.readline()
                   values = np.array(linevel.split(), dtype=np.float64)
                   data['vel'][istep,iatom,:] = values[:] * BOHR / TAU
@@ -222,7 +222,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
           if len(values):
               if (data['step'][istep] != int(values[0]) ):
                   raise RuntimeError("Different timesteps between files of force and thermo")
-              for iatom in xrange(natoms):
+              for iatom in range(natoms):
                   linefor = filefor.readline()
                   values = np.array(linefor.split(), dtype=np.float64)
                   data['for'][istep,iatom,:] = values[:]
@@ -234,7 +234,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
               if len(values):
                   if (data['step'][istep] != int(values[0]) ):
                       raise RuntimeError("Different timesteps between files of cell and thermo")
-                  for i in xrange(3):
+                  for i in range(3):
                       values = np.array(filecel.readline().split(), dtype=np.float64())
                       data['cell'][istep,:,i] = values * BOHR # MATRIX MUST BE TRANSPOSED (stupid CP convention)
 
@@ -248,7 +248,7 @@ def read_file_pos_vel(prefix, natoms, nstep=None, cell=None, method='full'):
 #        for icoord in range(3)
 #        if positions[iatom,icoord]<0 or positions[iatom,icoord]>
 
-def write_lammpstrj(outfile, data, natoms_per_type, type_names=None):
+def write_lammpstrj(outfile, data, natoms_per_type, type_names=None, cp_ordered=True):
     """
     Scrive un file nel formato lammpstrj (facilmente leggibile da vmd).
     cp.x nell'output separa gli atomi per tipi. Questa funzione assume che la prima metà sono di tipo "1"
@@ -270,14 +270,17 @@ def write_lammpstrj(outfile, data, natoms_per_type, type_names=None):
     #out_file.write("This Text is going to out file\nLook at it and see\n")
     nsteps = data['pos'].shape[0]
     natoms = data['pos'].shape[1]
-    if (natoms != sum(natoms_per_type)):
+    if (cp_ordered and natoms != sum(natoms_per_type)):
         raise ValueError('Sum of number of atoms per type does not match the total number of atoms.')
     if type_names is None:
-        type_names = map(str, np.arange(1, len(natoms_per_type)+1))
+        if cp_ordered:
+            type_names = list(map(str, np.arange(1, len(natoms_per_type)+1)))
+        else:
+            type_names = list(map(str, np.array(natoms_per_type) +1 ))
     else:
         if (len(natoms_per_type) != len(type_names)):
             raise ValueError('Number of type_names not compatible with natoms_per_type.')
-    for itimestep in xrange(nsteps):
+    for itimestep in range(nsteps):
         out_file.write("ITEM: TIMESTEP\n")
         out_file.write("{}\n".format(int(round(data['step'][itimestep]))))
         out_file.write("ITEM: NUMBER OF ATOMS\n")
@@ -300,24 +303,33 @@ def write_lammpstrj(outfile, data, natoms_per_type, type_names=None):
             out_file.write('{} {} {}\n'.format(ylo_bound, yhi_bound, xz))
             out_file.write('{} {} {}\n'.format(zlo_bound, zhi_bound, yz))
         else:
-            a, b, c = [data['cell'][itimestep,i,i] for i in xrange(3)]
+            a, b, c = [data['cell'][itimestep,i,i] for i in range(3)]
             out_file.write('ITEM: BOX BOUNDS pp pp pp\n')
             out_file.write('{} {}\n'.format(0, a))
             out_file.write('{} {}\n'.format(0, b))
             out_file.write('{} {}\n'.format(0, c))
         out_file.write('ITEM: ATOMS id type x y z vx vy vz\n')
-        cumnattype = np.cumsum(np.append(0,natoms_per_type))
-        for attype, nattype in enumerate(natoms_per_type):
-            firstat = cumnattype[attype]
-            lastat  = cumnattype[attype+1]
-            for i, idat in enumerate(xrange(firstat, lastat)):
-               out_file.write('{} {} {} {} {} {} {} {}\n'.format(idat+1, type_names[attype], \
+        if cp_ordered:
+            cumnattype = np.cumsum(np.append(0,natoms_per_type))
+            for attype, nattype in enumerate(natoms_per_type):
+                firstat = cumnattype[attype]
+                lastat  = cumnattype[attype+1]
+                for i, idat in enumerate(range(firstat, lastat)):
+                   out_file.write('{} {} {} {} {} {} {} {}\n'.format(idat+1, type_names[attype], \
+                                    data['pos'][itimestep,idat,0], data['pos'][itimestep,idat,1], data['pos'][itimestep,idat,2], \
+                                    data['vel'][itimestep,idat,0], data['vel'][itimestep,idat,1], data['vel'][itimestep,idat,2]))
+#                np.savetxt(out_file, np.vstack((np.arange(firstat+1,lastat+1), [type_names[attype]]*nattype, \
+#                                               data['pos'][itimestep,firstat:lastat,:].T, \
+#                                               data['vel'][itimestep,firstat:lastat,:].T)).T, \
+#                           fmt='%d %s %f %f %f %f %f %f')
+        else:
+            if len(natoms_per_type) != len(data['pos'][0]):
+                raise ValueError('Number of atoms does not correspond to the number of atomic id')
+            for idat in range(len(natoms_per_type)):
+                out_file.write('{} {} {} {} {} {} {} {}\n'.format(idat+1, type_names[idat], \
                                 data['pos'][itimestep,idat,0], data['pos'][itimestep,idat,1], data['pos'][itimestep,idat,2], \
                                 data['vel'][itimestep,idat,0], data['vel'][itimestep,idat,1], data['vel'][itimestep,idat,2]))
-#            np.savetxt(out_file, np.vstack((np.arange(firstat+1,lastat+1), [type_names[attype]]*nattype, \
-#                                           data['pos'][itimestep,firstat:lastat,:].T, \
-#                                           data['vel'][itimestep,firstat:lastat,:].T)).T, \
-#                       fmt='%d %s %f %f %f %f %f %f')
+
     out_file.close()
     return
 
@@ -374,6 +386,7 @@ def main ():
    mutualexcgroup.add_argument('--cell',  type=float, help='cell size in Bohr (cubic, if .cel file is not provided)')
    mutualexcgroup.add_argument('--cellA', type=float, help='cell size in Angstrom (cubic, if .cel file is not provided)')
    parser.add_argument('--minimal', action='store_true', help='just read .pos and .vel')
+   parser.add_argument('--not-ordered', help='read new cp.x format that does not reorder the atoms. You need to specify an array of types in --natomstype as long as the number of atoms', action='store_true')
 #   parser.add_argument('--comtraj', action='store_true', help='compute Center of Mass trajectory of each species')
    args = parser.parse_args()
    prefix = args.prefix
@@ -399,15 +412,15 @@ def main ():
    
    if outfile is not None:
      if natomstype is not None:
-       print "Writing text file: ", outfile + '.lammpstrj'
-       write_lammpstrj(outfile + '.lammpstrj', data, natomstype, atomtypenames)
+       print("Writing text file: ", outfile + '.lammpstrj')
+       write_lammpstrj(outfile + '.lammpstrj', data, natomstype, atomtypenames, cp_ordered=not args.not_ordered )
 #       if cmtraj:
 #         write_com_traj(outfile+'_com', data, natomstype, atomtypenames)
      else:
        raise ValueError('You must provide the number of atoms per type -t')
 
    if binoutfile is not None:
-     print "Writing binary file: {}.npz".format(binoutfile)
+     print("Writing binary file: {}.npz".format(binoutfile))
      np.savez(binoutfile, **data)
 
    return 0
